@@ -47,6 +47,50 @@ services:
             - lets-encrypt-webroot:/webroot
         networks:
             - docker_lan
+    invoiceninja:
+        build: build/php-fpm
+        image: meredithkm/deb-php-fpm:7.2
+        container_name: invoiceninja
+        links:
+          - mysqldb:mysql
+        env_file: .env
+        restart: always
+        volumes:
+            - invoiceninja:/var/www/app/
+        depends_on:
+            - mysqldb
+        networks:
+            - docker_lan
+    myadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        ports:
+            - "8889:80"
+        environment:
+            - PMA_ARBITRARY=1
+            - PMA_HOST=${MYSQL_HOST}
+        restart: always
+        depends_on:
+            - mysqldb
+        networks:
+            - docker_lan
+    mysqldb:
+        image: mysql:${MYSQL_VERSION}
+        container_name: ${MYSQL_HOST}
+        restart: always
+        env_file:
+            - ".env"
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+        ports:
+            - "8989:3306"
+        volumes:
+            - mysql-data:/var/lib/mysql
+        networks:
+            - docker_lan
 
 volumes:
   nginx-confd:
@@ -77,6 +121,10 @@ volumes:
     driver: local-persist
     driver_opts:
       mountpoint: /opt/docker-data/openemr/le-certs
+  mysql-data:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/mysql
   ssh-config:
     driver: local-persist
     driver_opts:
