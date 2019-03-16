@@ -1,0 +1,92 @@
+version: '3'
+services:
+    dockerhost:
+        image: qoomon/docker-host
+        container_name: dockerhost
+        cap_add: [ 'NET_ADMIN', 'NET_RAW' ]
+        restart: on-failure
+        networks:
+            - docker_lan
+    nginx:
+        build: ./build/nginx
+        image: nginx-custom
+        container_name: nginx
+        env_file:
+            - ".env"
+        environment:
+            NGINX_DEBUG: ${NGINX_DEBUG}
+            WORDPRESS_URL: ${WORDPRESS_URL}
+        volumes:
+            - nginx-confd:/etc/nginx/conf.d
+            - html-error:/var/www/html/error
+            - wordpress:/var/www/html/wordpress
+            - html-public:/var/www/html/public
+            - invoiceninja:/var/www/html/invoiceninja
+            - lets-encrypt-certs:/etc/letsencrypt
+            - lets-encrypt-webroot:/data/letsencrypt
+        ports:
+            - "80:80"
+            - "443:443"
+        depends_on:
+            - dockerhost
+        restart: unless-stopped
+        networks:
+            - docker_lan
+    certbot:
+        build: build/certbot
+        image: certbot-custom
+        container_name: certbot
+        env_file:
+            - ".env"
+        environment:
+            AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+            AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+        volumes:
+            - lets-encrypt-certs:/etc/letsencrypt
+            - lets-encrypt-webroot:/webroot
+        networks:
+            - docker_lan
+
+volumes:
+  nginx-confd:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/nginx-confd
+  html-error:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/html-error
+  wordpress:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/wordpress
+  html-public:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker/data/openemr/html-public
+  invoiceninja:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker/data/openemr/invoiceninja
+  lets-encrypt-webroot:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/le-webroot
+  lets-encrypt-certs:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/le-certs
+  ssh-config:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/ssh-config
+  export:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/export
+
+networks:
+  docker_lan:
+    external:
+      name: docker_lan
