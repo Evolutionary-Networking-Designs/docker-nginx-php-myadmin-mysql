@@ -108,11 +108,11 @@ volumes:
   html-public:
     driver: local-persist
     driver_opts:
-      mountpoint: /opt/docker/data/openemr/html-public
+      mountpoint: /opt/docker-data/openemr/html-public
   invoiceninja:
     driver: local-persist
     driver_opts:
-      mountpoint: /opt/docker/data/openemr/invoiceninja
+      mountpoint: /opt/docker-data/openemr/invoiceninja
   lets-encrypt-webroot:
     driver: local-persist
     driver_opts:
