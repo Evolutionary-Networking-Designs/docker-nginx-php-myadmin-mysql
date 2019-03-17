@@ -65,7 +65,7 @@ cert-help:
 	@scripts/cert-r53.sh -h
 
 cert-only:
-	@scripts/cert-r53.sh cert-only
+	@scripts/cert-r53.sh certonly
 
 nginx-shell:
 	@docker exec -it nginx /bin/bash
