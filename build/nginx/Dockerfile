@@ -4,6 +4,8 @@ LABEL maintainer="Kevin Meredith <kevin@meredithkm.info>"
 
 ADD entrypoint.sh /entrypoint.sh
 ADD nginx.conf /etc/nginx/nginx.conf
+ADD conf.d /etc/nginx/conf.d
+ADD error /var/www/html/error
 RUN chmod +x /entrypoint.sh
 RUN userdel www-data
 RUN groupadd -g 82 www-data

@@ -1,0 +1,49 @@
+upstream wordpress-php {
+    server wordpress:9000;
+    #server unix:/var/run/php/php7.0-fpm.sock;
+}
+
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name WORDPRESS_URL;
+ 
+    root /var/www/html/wordpress/;
+    index index.php;
+ 
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+    ssl_certificate           /etc/letsencrypt/live/WORDPRESS_URL/fullchain.pem;
+    ssl_certificate_key       /etc/letsencrypt/live/WORDPRESS_URL/privkey.pem;
+    ssl_trusted_certificate   /etc/letsencrypt/live/WORDPRESS_URL/chain.pem;
+    ssl_client_certificate /var/www/html/end-ca.crt;
+    ssl_verify_client optional;
+
+    include conf.d/error.nginx;
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+ 
+    location ~ \.php$ {
+        if ($ssl_client_verify != SUCCESS) {
+            set $test C;
+        }
+        if ($remote_addr != 52.54.246.53) {
+            set $test "${test}I";
+        }
+        if ($test = CI) {
+            return 403;
+            break;
+        }
+        index index.php;
+        try_files $uri $uri/ =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass wordpress-php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html/$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+    }
+
+}
