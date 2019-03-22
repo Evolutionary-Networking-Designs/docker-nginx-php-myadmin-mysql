@@ -1,1 +1,1 @@
-docker-compose run certbot --dns-route53 $@ 
+docker-compose run certbot certbot --dns-route53 $@

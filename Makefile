@@ -62,7 +62,7 @@ mysql-restore:
 	@docker exec -i $(shell docker-compose ps -q mysqldb) mysql -u"$(MYSQL_ROOT_USER)" -p"$(MYSQL_ROOT_PASSWORD)" < data/db/dumps/db.sql 2>/dev/null
 
 cert-help:
-	@scripts/cert-r53.sh -h
+	@scripts/cert-r53.sh --help
 
 cert-only:
 	@scripts/cert-r53.sh certonly
