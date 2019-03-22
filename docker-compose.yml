@@ -17,12 +17,12 @@ services:
             NGINX_DEBUG: ${NGINX_DEBUG}
             WORDPRESS_URL: ${WORDPRESS_URL}
         volumes:
+            - lets-encrypt-certs:/etc/letsencrypt
             - nginx-confd:/etc/nginx/conf.d
             - html-error:/var/www/html/error
             - wordpress:/var/www/html/wordpress
             - html-public:/var/www/html/public
             - invoiceninja:/var/www/html/invoiceninja
-            - lets-encrypt-certs:/etc/letsencrypt
             - lets-encrypt-webroot:/data/letsencrypt
         ports:
             - "80:80"
