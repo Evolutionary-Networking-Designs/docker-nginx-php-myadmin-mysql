@@ -1,0 +1,44 @@
+FROM php:5.6.40-fpm-alpine
+
+WORKDIR /var/www/html
+
+RUN docker-php-ext-install mysql mysqli pdo_mysql shmop
+
+RUN apk --no-cache add git bash rsync
+
+WORKDIR /openemr/
+RUN git clone --progress --verbose https://github.com/openemr/openemr.git .
+
+RUN mkdir /staging
+ADD config /openemr-config
+ADD entrypoint.sh /entrypoint.sh
+
+ARG OPENEMR_VERSION
+ENV OPENEMR_BRANCH=$OPENEMR_VERSION
+
+RUN git pull
+RUN git checkout $OPENEMR_BRANCH
+RUN cp /openemr/sites/default/config.php /staging/config.$OPENEMR_BRANCH
+
+WORKDIR /var/www/html/openemr/sites/default/
+
+RUN mkdir documents
+RUN mkdir edi
+RUN mkdir era
+RUN mkdir letter-templates
+
+WORKDIR /var/www/html/openemr/
+
+VOLUME ["/var/www/html/openemr/sites/default/documents"]
+VOLUME ["/var/www/html/openemr/sites/default/edi"]
+VOLUME ["/var/www/html/openemr/sites/default/era"]
+VOLUME ["/var/www/html/openemr/sites/default/letter-templates"]
+VOLUME ["/openemr-config"]
+
+RUN echo php_admin_value[date.timezone] = America/New_York > /usr/local/etc/php-fpm.d/openemr.conf
+
+WORKDIR /var/www/html
+
+EXPOSE 9000
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]
