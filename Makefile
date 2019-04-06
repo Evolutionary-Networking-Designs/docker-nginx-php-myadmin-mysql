@@ -51,15 +51,27 @@ logs:
 	@docker-compose logs -f
 
 mysql-cli:
-	@docker exec -it $(shell docker-compose ps -q mysqldb) mysql -u"$(MYSQL_ROOT_USER)" -p"$(MYSQL_ROOT_PASSWORD)"
+	@docker exec -it mysql mysql -u"$(MYSQL_ROOT_USER)" -p"$(MYSQL_ROOT_PASSWORD)"
 
 mysql-dump:
-	@mkdir -p $(MYSQL_DUMPS_DIR)
-	@docker exec $(shell docker-compose ps -q mysqldb) mysqldump --all-databases -u"$(MYSQL_ROOT_USER)" -p"$(MYSQL_ROOT_PASSWORD)" > data/db/dumps/db.sql 2>/dev/null
-	@make resetOwner
+	mkdir -p ./data/db/dumps
+	docker exec mysql mysqldump --all-databases -u"$(MYSQL_ROOT_USER)" -p"$(MYSQL_ROOT_PASSWORD)" | sudo cat > ./data/db/dumps/db.sql
+	sudo chown -R mysql:mysql ./data/db/dumps/db.sql
 
 mysql-restore:
-	@docker exec -i $(shell docker-compose ps -q mysqldb) mysql -u"$(MYSQL_ROOT_USER)" -p"$(MYSQL_ROOT_PASSWORD)" < data/db/dumps/db.sql 2>/dev/null
+	docker cp ./data/db/dumps/db.sql mysql:/export/db.sql
+	docker exec mysql mysql -u"$(MYSQL_ROOT_USER)" -p"$(MYSQL_ROOT_PASSWORD)" < ./data/db/dumps/db.sql
+
+mysql-reset:
+	sudo rm -rf /opt/docker-data/openemr/mysql
+	sudo mkdir /opt/docker-data/openemr/mysql
+	sudo chown -R mysql:mysql /opt/docker-data/openemr/mysql
+
+mysql-shell:
+	docker exec -it mysql /bin/bash
+
+mysql-eshell:
+	docker run --rm -it --name mysql -env-file .env -v mysql-data:/var/lib/mysql meredithk/mysql /bin/bash
 
 cert-help:
 	@scripts/cert-r53.sh --help
@@ -78,8 +90,5 @@ nginx-reload:
 
 in-shell:
 	@docker exec -it invoiceninja /bin/sh
-
-resetOwner:
-	@$(shell sudo chown -Rf $($USER):$(shell id -g -n $(USER)) $(MYSQL_DUMPS_DIR) "$(shell pwd)/le" 2> /dev/null)
 
 .PHONY: clean

@@ -23,6 +23,7 @@ services:
             - wordpress:/var/www/html/wordpress
             - html-public:/var/www/html/public
             - invoiceninja:/var/www/html/invoiceninja
+            - openemr-root:/var/www/html/openemr
             - lets-encrypt-webroot:/data/letsencrypt
         ports:
             - "80:80"
@@ -48,7 +49,6 @@ services:
         networks:
             - docker_lan
     invoiceninja:
-        build: build/php-fpm
         image: meredithkm/deb-php-fpm:7.2
         container_name: invoiceninja
         links:
@@ -75,7 +75,8 @@ services:
         networks:
             - docker_lan
     mysqldb:
-        image: mysql:${MYSQL_VERSION}
+        build: ./build/mysql
+        image: meredithk/mysql
         container_name: ${MYSQL_HOST}
         restart: always
         env_file:
@@ -83,12 +84,33 @@ services:
         environment:
             - MYSQL_DATABASE=${MYSQL_DATABASE}
             - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-            - MYSQL_USER=${MYSQL_USER}
-            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-        ports:
-            - "8989:3306"
         volumes:
             - mysql-data:/var/lib/mysql
+        networks:
+            - docker_lan
+    openemr:
+        image: meredithk/openemr:${OPENEMR_VERSION}
+        container_name: openemr
+        restart: always
+        env_file:
+            - ".env"
+        environment:
+            - OPENEMR_DB_HOST=${OPENEMR_DB_HOST}
+            - OPENEMR_DB_PORT=${OPENEMR_DB_PORT}
+            - OPENEMR_LOGIN=${OPENEMR_LOGIN}
+            - OPENEMR_PASS=${OPENEMR_PASS}
+            - OPENEMR_DBASE=${OPENEMR_DBASE}
+            - OPENEMR_CONFIG=${OPENEMR_CONFIG}
+        volumes:
+            - openemr-root:/var/www/html/openemr/
+            - openemr-docs:/var/www/html/openemr/sites/default/documents/
+            - openemr-edi:/var/www/html/openemr/sites/default/edi/
+            - openemr-era:/var/www/html/openemr/sites/default/era/
+            - openemr-templates:/var/www/html/openemr/sites/default/letter-templates/
+            - openemr-config:/openemr-config/
+        restart: always
+        depends_on:
+            - mysqldb
         networks:
             - docker_lan
 
@@ -129,6 +151,30 @@ volumes:
     driver: local-persist
     driver_opts:
       mountpoint: /opt/docker-data/openemr/ssh-config
+  openemr-root:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/openemr-root
+  openemr-docs:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/openemr-docs
+  openemr-edi:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/openemr-edi
+  openemr-era:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/openemr-era
+  openemr-templates:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/openemr-templates
+  openemr-config:
+    driver: local-persist
+    driver_opts:
+      mountpoint: /opt/docker-data/openemr/openemr-config
   export:
     driver: local-persist
     driver_opts:
